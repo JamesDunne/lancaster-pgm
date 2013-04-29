@@ -20,6 +20,7 @@ namespace LANCaster
             this.bufferSize = bufferSize;
             this.s = new Socket(AddressFamily.InterNetwork, SocketType.Rdm, PGM.IPPROTO_RM);
             this.s.ReceiveBufferSize = bufferSize * 2048;
+            this.s.UseOnlyOverlappedIO = true;
         }
 
         public sealed class Connection
@@ -51,14 +52,14 @@ namespace LANCaster
 
                 try
                 {
-#if false
+#if true
                     n = ls.Receive(bufs, SocketFlags.Partial, out err);
 #else
                     n = await Task.Factory.FromAsync(
-                        (AsyncCallback cb, object state) => ls.BeginReceive(bufs, SocketFlags.None, cb, state),
+                        (AsyncCallback cb, object state) => ls.BeginReceive(bufs, SocketFlags.Partial, cb, state),
                         (IAsyncResult iar) => ls.EndReceive(iar, out err),
                         (object)null
-                    );
+                    ).ConfigureAwait(false);
 #endif
 
                     if (err != SocketError.Success || n == 0)
@@ -77,9 +78,11 @@ namespace LANCaster
 
             public void Close()
             {
+                Debug.WriteLine("C: Closing...");
                 // TODO(jsd): Figure out proper shutdown procedure.
-                ls.Shutdown(SocketShutdown.Both);
+                //ls.Shutdown(SocketShutdown.Both);
                 ls.Close();
+                Debug.WriteLine("C: Closed");
             }
         }
 
@@ -93,7 +96,7 @@ namespace LANCaster
                 (AsyncCallback cb, object state) => s.BeginAccept(cb, state),
                 (IAsyncResult r) => s.EndAccept(r),
                 (object)null
-            );
+            ).ConfigureAwait(false);
             Debug.WriteLine("C: Accepted");
 
             return new Connection(ls, cancel);

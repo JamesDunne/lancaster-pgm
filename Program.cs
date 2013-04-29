@@ -20,6 +20,9 @@ namespace LANCaster
                 return;
             }
 
+            ThreadPool.SetMaxThreads(12, 24);
+            ThreadPool.SetMinThreads(8, 12);
+
             // Run the main task and wait for its completion:
             Task.Run((Func<Task>)Run).Wait();
         }
@@ -28,6 +31,7 @@ namespace LANCaster
         {
             try
             {
+                //var ep = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("224.12.19.82"), 0);
                 var ep = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("224.12.19.82"), 0);
 
                 // Run a server-side task:
@@ -40,17 +44,25 @@ namespace LANCaster
                         // Server connect always returns:
                         await server.Connect(ep, CancellationToken.None);
 
-                        byte[] buffer = new byte[6];
+                        byte[] buffer = new byte[1024];
                         int sn = Encoding.ASCII.GetBytes("HELLO", 0, 5, buffer, 0);
+                        sn = 1024;
 
-                        // Send some data so the client can accept:
-                        for (int i = 0; i < 30000; ++i)
+                        for (int j = 0; j < 10; ++j)
                         {
-                            var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
-                            if (res.IsRight)
+                            Console.WriteLine("S: Sending...");
+                            // Send some data so the client can accept:
+                            for (int i = 0; i < 30000; ++i)
                             {
-                                Console.Error.WriteLine("S: {0}", res.Right);
+                                var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
+                                if (res.IsRight)
+                                {
+                                    Console.Error.WriteLine("S: {0}", res.Right);
+                                }
                             }
+
+                            Console.WriteLine("S: Wait 5000 ms...");
+                            await Task.Delay(5000);
                         }
 
                         Console.WriteLine("S: Done");
@@ -86,7 +98,8 @@ namespace LANCaster
                             }
 
                             ++recvd;
-                            Console.WriteLine("C: {0} {1}", Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count), recvd);
+                            // , Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count)
+                            Console.WriteLine("C: {0}", recvd);
                         }
 
                         Console.WriteLine("C: {0}", recvd);
