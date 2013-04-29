@@ -12,70 +12,77 @@ namespace LANCaster
 {
     public sealed class Client
     {
-        // PGM:
         readonly Socket s;
+        readonly int bufferSize;
 
-        public Client()
+        public Client(int bufferSize = 9040)
         {
-            // PGM:
-            this.s = new Socket(AddressFamily.InterNetwork, SocketType.Rdm, (ProtocolType)113);
+            this.bufferSize = bufferSize;
+            this.s = new Socket(AddressFamily.InterNetwork, SocketType.Rdm, PGM.IPPROTO_RM);
+            this.s.ReceiveBufferSize = bufferSize * 1024;
         }
 
         public sealed class Connection
         {
             readonly Socket ls;
             readonly CancellationToken cancel;
+            readonly int bufferSize;
 
-            internal Connection(Socket ls, CancellationToken cancel)
+            internal Connection(Socket ls, CancellationToken cancel, int bufferSize = 9040)
             {
                 this.ls = ls;
                 this.cancel = cancel;
+                this.bufferSize = bufferSize;
             }
 
-            public async Task Read()
+            public ArraySegment<byte> AllocateBuffer()
             {
-                // Receive loop for the socket:
+                return new ArraySegment<byte>(new byte[bufferSize]);
+            }
 
-                byte[] buffer = new byte[65535];
+            public async Task<Either<ArraySegment<byte>, SocketError>> Receive(ArraySegment<byte> buf)
+            {
+                Debug.WriteLine("C: Receiving...");
+
+                if (!ls.Connected) return SocketError.NotConnected;
+
+                SocketError err = SocketError.Success;
+                int n;
 
                 try
                 {
-                    while (!cancel.IsCancellationRequested)
-                    {
-                        Debug.WriteLine("C: Receiving...");
+                    n = await Task.Factory.FromAsync(
+                        (AsyncCallback cb, object state) => ls.BeginReceive(new[] { buf }, SocketFlags.None, cb, state),
+                        (IAsyncResult iar) => ls.EndReceive(iar, out err),
+                        (object)null
+                    );
 
-                        SocketError err = SocketError.Success;
-                        var n = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => ls.BeginReceive(buffer, 0, 65535, SocketFlags.None, cb, state),
-                            (IAsyncResult r) => ls.EndReceive(r, out err),
-                            (object)null
-                        );
-
-                        if (err != SocketError.Success)
-                        {
-                            Debug.WriteLine("C: Closed due to {0}".F(err));
-                            break;
-                        }
-
-                        Debug.WriteLine("C: Received");
-
-                        if (n > 0)
-                        {
-                            Console.WriteLine("C: {0}", Encoding.ASCII.GetString(buffer, 0, n));
-                        }
-                    }
+                    if (err != SocketError.Success || n == 0)
+                        return err;
                 }
-                catch (Exception ex)
+                catch (SocketException skex)
                 {
-                    Console.Error.WriteLine(ex.ToString());
+                    return skex.SocketErrorCode;
                 }
+
+                Debug.WriteLine("C: Received {0} bytes".F(n));
+                Debug.Assert(n > 0);
+
+                return new ArraySegment<byte>(buf.Array, buf.Offset, n);
+            }
+
+            public void Close()
+            {
+                // TODO(jsd): Figure out proper shutdown procedure.
+                ls.Shutdown(SocketShutdown.Both);
+                ls.Close();
             }
         }
 
         public async Task<Connection> Accept(EndPoint ep, CancellationToken cancel)
         {
             s.Bind(ep);
-            s.Listen(10);
+            s.Listen(1);
 
             Debug.WriteLine("C: Accepting...");
             var ls = await Task.Factory.FromAsync(
