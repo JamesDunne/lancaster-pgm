@@ -39,25 +39,21 @@ namespace LANCaster
             Debug.WriteLine("S: Connected");
         }
 
-        public async Task<Either<int, SocketError>> Send()
+        public async Task<Either<int, SocketError>> Send(params ArraySegment<byte>[] bufs)
         {
-            byte[] buffer = new byte[bufferSize];
-            int sn = Encoding.ASCII.GetBytes("HELLO", 0, 5, buffer, 0);
-
             Debug.WriteLine("S: Sending...");
             SocketError err = SocketError.Success;
+#if false
+            int snv = s.Send(bufs, SocketFlags.None, out err);
+#else
             int snv = await Task.Factory.FromAsync(
-                (AsyncCallback cb, object state) => s.BeginSend(buffer, 0, sn, SocketFlags.None, cb, state),
+                (AsyncCallback cb, object state) => s.BeginSend(bufs, SocketFlags.None, cb, state),
                 (IAsyncResult iar) => s.EndSend(iar, out err),
                 (object)null
             );
+#endif
             if (err != SocketError.Success)
                 return err;
-
-            if (snv != sn)
-            {
-                Console.Error.WriteLine("S: {0} != {1}", snv, sn);
-            }
 
             Debug.WriteLine("S: Sent");
             return snv;

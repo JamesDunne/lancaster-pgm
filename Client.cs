@@ -19,7 +19,7 @@ namespace LANCaster
         {
             this.bufferSize = bufferSize;
             this.s = new Socket(AddressFamily.InterNetwork, SocketType.Rdm, PGM.IPPROTO_RM);
-            this.s.ReceiveBufferSize = bufferSize * 1024;
+            this.s.ReceiveBufferSize = bufferSize * 2048;
         }
 
         public sealed class Connection
@@ -40,7 +40,7 @@ namespace LANCaster
                 return new ArraySegment<byte>(new byte[bufferSize]);
             }
 
-            public async Task<Either<ArraySegment<byte>, SocketError>> Receive(ArraySegment<byte> buf)
+            public async Task<Either<ArraySegment<byte>, SocketError>> Receive(params ArraySegment<byte>[] bufs)
             {
                 Debug.WriteLine("C: Receiving...");
 
@@ -51,11 +51,15 @@ namespace LANCaster
 
                 try
                 {
+#if false
+                    n = ls.Receive(bufs, SocketFlags.Partial, out err);
+#else
                     n = await Task.Factory.FromAsync(
-                        (AsyncCallback cb, object state) => ls.BeginReceive(new[] { buf }, SocketFlags.None, cb, state),
+                        (AsyncCallback cb, object state) => ls.BeginReceive(bufs, SocketFlags.None, cb, state),
                         (IAsyncResult iar) => ls.EndReceive(iar, out err),
                         (object)null
                     );
+#endif
 
                     if (err != SocketError.Success || n == 0)
                         return err;
@@ -68,7 +72,7 @@ namespace LANCaster
                 Debug.WriteLine("C: Received {0} bytes".F(n));
                 Debug.Assert(n > 0);
 
-                return new ArraySegment<byte>(buf.Array, buf.Offset, n);
+                return new ArraySegment<byte>(bufs[0].Array, bufs[0].Offset, n);
             }
 
             public void Close()

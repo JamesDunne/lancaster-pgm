@@ -40,10 +40,13 @@ namespace LANCaster
                         // Server connect always returns:
                         await server.Connect(ep, CancellationToken.None);
 
+                        byte[] buffer = new byte[6];
+                        int sn = Encoding.ASCII.GetBytes("HELLO", 0, 5, buffer, 0);
+
                         // Send some data so the client can accept:
-                        for (int i = 0; i < 60000; ++i)
+                        for (int i = 0; i < 30000; ++i)
                         {
-                            var res = await server.Send();
+                            var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
                             if (res.IsRight)
                             {
                                 Console.Error.WriteLine("S: {0}", res.Right);
@@ -83,7 +86,7 @@ namespace LANCaster
                             }
 
                             ++recvd;
-                            //Console.WriteLine("C: {0} {1}", Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count), recvd);
+                            Console.WriteLine("C: {0} {1}", Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count), recvd);
                         }
 
                         Console.WriteLine("C: {0}", recvd);
