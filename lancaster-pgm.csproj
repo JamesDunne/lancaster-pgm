@@ -49,6 +49,7 @@
     <Compile Include="PGM.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ProtocolConfiguration.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="System\Either.cs" />
   </ItemGroup>
