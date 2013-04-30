@@ -41,10 +41,9 @@ namespace LANCaster
                 s.Bind(new IPEndPoint(IPAddress.Any, 0));
 
                 // NOTE(jsd): This option fails here:
-                //s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_SEND_WINDOW_ADV_RATE, 50);
+                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_SEND_WINDOW_ADV_RATE, 50);
 
-                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_RATE_WINDOW_SIZE, new PGM.RMSendWindow(24000u, 0u, 64u * 1024u * 1024u));
-                //s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_RATE_WINDOW_SIZE, new PGM.RMSendWindow(450000u, 250u, 14062500u));
             }
             else
             {

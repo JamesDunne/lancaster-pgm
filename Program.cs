@@ -24,7 +24,7 @@ namespace LANCaster
             var config = new ProtocolConfiguration
             {
                 MulticastEndPoint = new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982),
-                UsePGM = false,
+                UsePGM = true,
                 UseNonBlockingIO = true
             };
 

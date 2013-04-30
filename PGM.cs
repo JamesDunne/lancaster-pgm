@@ -55,6 +55,12 @@ namespace LANCaster
             public uint WindowSizeInMilliSecs;
             public uint WindowSizeInBytes;
 
+            /// <summary>
+            /// windowSizeInBytes = (rateKbitsPerSec / 8) * windowSizeInMilliSecs
+            /// </summary>
+            /// <param name="rateKbitsPerSec"></param>
+            /// <param name="windowSizeInMilliSecs"></param>
+            /// <param name="windowSizeInBytes"></param>
             public RMSendWindow(
                 uint rateKbitsPerSec,
                 uint windowSizeInMilliSecs,
