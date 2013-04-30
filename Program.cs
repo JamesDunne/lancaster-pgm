@@ -12,8 +12,8 @@ namespace LANCaster
     {
         static void Main(string[] args)
         {
-            ThreadPool.SetMaxThreads(24, 24);
-            ThreadPool.SetMinThreads(16, 16);
+            //ThreadPool.SetMaxThreads(24, 24);
+            //ThreadPool.SetMinThreads(16, 16);
 
             // Run the main task and wait for its completion:
             Task.Run((Func<Task>)Run).Wait();
@@ -57,11 +57,14 @@ namespace LANCaster
                         int sn = Encoding.ASCII.GetBytes("HELLO", 0, 5, buffer, 0);
                         sn = bufferSize;
 
-                        for (int j = 0; j < 5; ++j)
+                        for (int j = 0; j < 10; ++j)
                         {
+                            Console.WriteLine("S: Wait 3000 ms...");
+                            await Task.Delay(3000);
+
                             Console.WriteLine("S: Sending...");
                             // Send some data so the client can accept:
-                            for (int i = 0; i < 10000; ++i)
+                            for (int i = 0; i < 30000; ++i)
                             {
 #if true
                                 var task0 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
@@ -87,9 +90,6 @@ namespace LANCaster
                                 var task = server.Send(new ArraySegment<byte>(buffer, 0, sn));
 #endif
                             }
-
-                            Console.WriteLine("S: Wait 1000 ms...");
-                            await Task.Delay(1000);
                         }
 
                         Console.WriteLine("S: Done");
