@@ -20,7 +20,81 @@ namespace System.Net.Sockets
 {
     public static class SocketExtensions
     {
-        public static Task<Either<int, SocketError>> SendToAsTask(this Socket s, ArraySegment<byte> buf, SocketFlags flags, EndPoint remoteEP)
+        public static Task<Maybe<SocketError>> ConnectNonBlocking(this Socket s, EndPoint ep)
+        {
+            var tcs = new TaskCompletionSource<Maybe<SocketError>>();
+
+            try
+            {
+                IAsyncResult r = s.BeginConnect(ep, iar =>
+                {
+                    try
+                    {
+                        int n = s.EndSendTo(iar);
+                        tcs.SetResult(Maybe<SocketError>.Nothing);
+                    }
+                    catch (SocketException skex)
+                    {
+                        tcs.SetResult(skex.SocketErrorCode);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                }, (object)null);
+
+                Debug.Assert(r != null);
+            }
+            catch (SocketException skex)
+            {
+                tcs.SetResult(skex.SocketErrorCode);
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+
+            return tcs.Task;
+        }
+
+        public static Task<Either<Socket, SocketError>> AcceptNonBlocking(this Socket s)
+        {
+            var tcs = new TaskCompletionSource<Either<Socket, SocketError>>();
+
+            try
+            {
+                IAsyncResult r = s.BeginAccept(iar =>
+                {
+                    try
+                    {
+                        Socket rs = s.EndAccept(iar);
+                        tcs.SetResult(rs);
+                    }
+                    catch (SocketException skex)
+                    {
+                        tcs.SetResult(skex.SocketErrorCode);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                }, (object)null);
+
+                Debug.Assert(r != null);
+            }
+            catch (SocketException skex)
+            {
+                tcs.SetResult(skex.SocketErrorCode);
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+
+            return tcs.Task;
+        }
+
+        public static Task<Either<int, SocketError>> SendToNonBlocking(this Socket s, ArraySegment<byte> buf, SocketFlags flags, EndPoint remoteEP)
         {
             var tcs = new TaskCompletionSource<Either<int, SocketError>>();
 
@@ -57,7 +131,7 @@ namespace System.Net.Sockets
             return tcs.Task;
         }
 
-        public static Task<Either<int, SocketError>> SendAsTask(this Socket s, ArraySegment<byte> buf, SocketFlags flags)
+        public static Task<Either<int, SocketError>> SendNonBlocking(this Socket s, ArraySegment<byte> buf, SocketFlags flags)
         {
             SocketError err;
 
@@ -101,7 +175,7 @@ namespace System.Net.Sockets
             return tcs.Task;
         }
 
-        public static Task<Either<int, SocketError>> ReceiveAsTask(this Socket s, ArraySegment<byte> buf, SocketFlags flags)
+        public static Task<Either<int, SocketError>> ReceiveNonBlocking(this Socket s, ArraySegment<byte> buf, SocketFlags flags)
         {
             SocketError err;
 

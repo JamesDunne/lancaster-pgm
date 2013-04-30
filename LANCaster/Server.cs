@@ -59,45 +59,45 @@ namespace LANCaster
             }
         }
 
-        public async Task Connect(CancellationToken cancel)
+        public async Task<Maybe<SocketError>> Connect(CancellationToken cancel)
         {
-            Debug.WriteLine("S: Connecting...");
-
-            if (config.UsePGM)
+            try
             {
-                if (config.UseNonBlockingIO)
+                if (config.UsePGM)
                 {
-                    await Task.Factory.FromAsync(
-                        (AsyncCallback cb, object state) => s.BeginConnect(config.MulticastEndpoint, cb, state),
-                        (IAsyncResult iar) => s.EndConnect(iar),
-                        (object)null
-                    );
+                    if (config.UseNonBlockingIO)
+                    {
+                        return await s.ConnectNonBlocking(config.MulticastEndpoint);
+                    }
+                    else
+                    {
+                        s.Connect(config.MulticastEndpoint);
+                    }
                 }
                 else
                 {
-                    s.Connect(config.MulticastEndpoint);
+                    if (config.UseLoopback)
+                    {
+                        s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
+                        s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                    }
+                    else
+                    {
+                        s.Bind(config.MulticastEndpoint);
+                    }
+                    s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(config.MulticastEndpoint.Address));
                 }
             }
-            else
+            catch (SocketException skex)
             {
-                if (config.UseLoopback)
-                {
-                    s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
-                    s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                }
-                else
-                {
-                    s.Bind(config.MulticastEndpoint);
-                }
-                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(config.MulticastEndpoint.Address));
+                return skex.SocketErrorCode;
             }
 
-            Debug.WriteLine("S: Connected");
+            return Maybe<SocketError>.Nothing;
         }
 
         public async Task<Either<int, SocketError>> Send(ArraySegment<byte> buf)
         {
-            Debug.WriteLine("S: Sending...");
             SocketError err = SocketError.Success;
 
             int snv;
@@ -107,18 +107,10 @@ namespace LANCaster
                 {
                     if (config.UseNonBlockingIO)
                     {
-#if true
-                        var res = await s.SendAsTask(buf, SocketFlags.None);
+                        var res = await s.SendNonBlocking(buf, SocketFlags.None);
                         if (res.IsRight) return res.Right;
 
                         snv = res.Left;
-#else
-                        snv = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => s.BeginSend(buf.Array, buf.Offset, buf.Count, SocketFlags.None, cb, state),
-                            (IAsyncResult iar) => s.EndSend(iar, out err),
-                            (object)null
-                        );
-#endif
                     }
                     else
                     {
@@ -129,18 +121,10 @@ namespace LANCaster
                 {
                     if (config.UseNonBlockingIO)
                     {
-#if true
-                        var res = await s.SendToAsTask(buf, SocketFlags.None, config.MulticastEndpoint);
+                        var res = await s.SendToNonBlocking(buf, SocketFlags.None, config.MulticastEndpoint);
                         if (res.IsRight) return res.Right;
 
                         snv = res.Left;
-#else
-                        snv = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => s.BeginSendTo(buf.Array, buf.Offset, buf.Count, SocketFlags.None, config.MulticastEndpoint, cb, state),
-                            (IAsyncResult iar) => s.EndSendTo(iar),
-                            (object)null
-                        );
-#endif
                     }
                     else
                     {
@@ -156,16 +140,13 @@ namespace LANCaster
                 return skex.SocketErrorCode;
             }
 
-            Debug.WriteLine("S: Sent");
             return snv;
         }
 
         public void Close()
         {
-            Debug.WriteLine("S: Closing...");
             //s.Shutdown(SocketShutdown.Both);
             s.Close();
-            Debug.WriteLine("S: Closed");
         }
     }
 }

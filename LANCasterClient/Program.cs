@@ -49,7 +49,13 @@ namespace LANCasterClient
 
                 // Client listen needs some data sent to accept:
                 Console.WriteLine("Accept...");
-                var conn = await client.Accept(CancellationToken.None);
+                var res = await client.Accept(CancellationToken.None);
+                if (res.IsRight)
+                {
+                    Console.Error.WriteLine(res.Right);
+                    return;
+                }
+                var conn = res.Left;
                 Console.WriteLine("Accepted");
 
                 int recvd = 0;
@@ -57,15 +63,15 @@ namespace LANCasterClient
                 while (true)
                 {
                     // Read data into our buffer:
-                    var res = await conn.Receive(buf);
-                    if (res.IsRight)
+                    var rres = await conn.Receive(buf);
+                    if (rres.IsRight)
                     {
                         if (!config.UsePGM)
                         {
-                            if (res.Right == System.Net.Sockets.SocketError.NotConnected) continue;
+                            if (rres.Right == System.Net.Sockets.SocketError.NotConnected) continue;
                         }
 
-                        Console.Error.WriteLine("{0}", res.Right);
+                        Console.Error.WriteLine("{0}", rres.Right);
                         conn.Close();
                         break;
                     }

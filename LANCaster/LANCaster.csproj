@@ -90,9 +90,7 @@
     <Compile Include="ProtocolConfiguration.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="System\Either.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
+    <Compile Include="System\Maybe.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

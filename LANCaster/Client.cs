@@ -37,21 +37,18 @@ namespace LANCaster
                 this.s.UseOnlyOverlappedIO = true;
         }
 
-        public async Task<Connection> Accept(CancellationToken cancel)
+        public async Task<Either<Connection, SocketError>> Accept(CancellationToken cancel)
         {
             if (config.UsePGM)
             {
                 s.Bind(config.MulticastEndpoint);
                 s.Listen(1);
 
-                Debug.WriteLine("C: Accepting...");
-                var ls = await Task.Factory.FromAsync(
-                    (AsyncCallback cb, object state) => s.BeginAccept(cb, state),
-                    (IAsyncResult r) => s.EndAccept(r),
-                    (object)null
+                var res = await s.AcceptNonBlocking();
+                return res.Collapse<Either<Connection, SocketError>>(
+                    ls => new Connection(ls, cancel, config),
+                    err => err
                 );
-                Debug.WriteLine("C: Accepted");
-                return new Connection(ls, cancel, config);
             }
             else
             {
@@ -91,8 +88,6 @@ namespace LANCaster
 
             public async Task<Either<ArraySegment<byte>, SocketError>> Receive(ArraySegment<byte> buf)
             {
-                Debug.WriteLine("C: Receiving...");
-
                 if (config.UsePGM)
                 {
                     if (!ls.Connected)
@@ -107,18 +102,10 @@ namespace LANCaster
                     // NOTE(jsd): Logic is equivalent regardless of PGM or UDP protocol:
                     if (config.UseNonBlockingIO)
                     {
-#if true
-                        var res = await ls.ReceiveAsTask(buf, SocketFlags.None);
+                        var res = await ls.ReceiveNonBlocking(buf, SocketFlags.None);
                         if (res.IsRight) return res.Right;
 
                         n = res.Left;
-#else
-                        n = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => ls.BeginReceive(buf.Array, buf.Offset, buf.Count, SocketFlags.None, cb, state),
-                            (IAsyncResult iar) => ls.EndReceive(iar, out err),
-                            (object)null
-                        );
-#endif
                     }
                     else
                     {
@@ -133,7 +120,6 @@ namespace LANCaster
                     return skex.SocketErrorCode;
                 }
 
-                Debug.WriteLine("C: Received {0} bytes".F(n));
                 Debug.Assert(n > 0);
 
                 return new ArraySegment<byte>(buf.Array, buf.Offset, n);
@@ -141,11 +127,9 @@ namespace LANCaster
 
             public void Close()
             {
-                Debug.WriteLine("C: Closing...");
                 // TODO(jsd): Figure out proper shutdown procedure.
                 //ls.Shutdown(SocketShutdown.Both);
                 ls.Close();
-                Debug.WriteLine("C: Closed");
             }
         }
     }

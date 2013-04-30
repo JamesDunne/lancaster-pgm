@@ -62,30 +62,6 @@ namespace LANCasterServer
 
                     Console.WriteLine("Sending...");
                     // Send some data so the client can accept:
-#if false
-                            for (int i = 0; i < 30000; ++i)
-                            {
-                                var task0 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
-                                var task1 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
-                                var task2 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
-
-                                var res0 = await task0;
-                                if (res0.IsRight)
-                                {
-                                    Console.Error.WriteLine("{0}", res0.Right);
-                                }
-                                var res1 = await task1;
-                                if (res1.IsRight)
-                                {
-                                    Console.Error.WriteLine("{0}", res1.Right);
-                                }
-                                var res2 = await task2;
-                                if (res2.IsRight)
-                                {
-                                    Console.Error.WriteLine("{0}", res2.Right);
-                                }
-                            }
-#else
                     for (int i = 0; i < 90000; ++i)
                     {
                         var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
@@ -94,7 +70,6 @@ namespace LANCasterServer
                             Console.Error.WriteLine("{0}", res.Right);
                         }
                     }
-#endif
                 }
 
                 server.Close();
