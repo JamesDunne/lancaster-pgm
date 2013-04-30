@@ -37,6 +37,10 @@ namespace LANCaster
                 return;
             }
 
+            while (Console.KeyAvailable) Console.ReadKey(true);
+            Console.WriteLine("Press any key to start...");
+            Console.ReadKey(true);
+
             try
             {
                 // Run a server-side task:
@@ -49,21 +53,40 @@ namespace LANCaster
                         // Server connect always returns:
                         await server.Connect(CancellationToken.None);
 
-                        byte[] buffer = new byte[1024];
+                        const int bufferSize = 9040;
+                        byte[] buffer = new byte[bufferSize];
                         int sn = Encoding.ASCII.GetBytes("HELLO", 0, 5, buffer, 0);
-                        sn = 1024;
+                        sn = bufferSize;
 
                         for (int j = 0; j < 5; ++j)
                         {
                             Console.WriteLine("S: Sending...");
                             // Send some data so the client can accept:
-                            for (int i = 0; i < 30000; ++i)
+                            for (int i = 0; i < 10000; ++i)
                             {
-                                var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
-                                if (res.IsRight)
+#if true
+                                var task0 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
+                                var task1 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
+                                var task2 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
+
+                                var res0 = await task0;
+                                if (res0.IsRight)
                                 {
-                                    Console.Error.WriteLine("S: {0}", res.Right);
+                                    Console.Error.WriteLine("S: {0}", res0.Right);
                                 }
+                                var res1 = await task1;
+                                if (res1.IsRight)
+                                {
+                                    Console.Error.WriteLine("S: {0}", res1.Right);
+                                }
+                                var res2 = await task2;
+                                if (res2.IsRight)
+                                {
+                                    Console.Error.WriteLine("S: {0}", res2.Right);
+                                }
+#else
+                                var task = server.Send(new ArraySegment<byte>(buffer, 0, sn));
+#endif
                             }
 
                             Console.WriteLine("S: Wait 1000 ms...");
@@ -110,8 +133,11 @@ namespace LANCaster
                             }
 
                             ++recvd;
-                            // , Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count)
-                            Console.WriteLine("C: {0}", recvd);
+                            if ((recvd & 511) == 1)
+                            {
+                                // , Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count)
+                                Console.WriteLine("C: {0}", recvd);
+                            }
                         }
 
                         Console.WriteLine("C: {0}", recvd);
@@ -125,8 +151,9 @@ namespace LANCaster
                 // Wait for both tasks:
                 await Task.WhenAll(ts, tc);
 
-                Console.WriteLine("Finished!");
-                Console.ReadKey();
+                while (Console.KeyAvailable) Console.ReadKey(true);
+                Console.WriteLine("Finished! Press any key to exit.");
+                Console.ReadKey(true);
             }
             catch (Exception ex)
             {

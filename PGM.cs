@@ -60,16 +60,14 @@ namespace LANCaster
             /// </summary>
             /// <param name="rateKbitsPerSec"></param>
             /// <param name="windowSizeInMilliSecs"></param>
-            /// <param name="windowSizeInBytes"></param>
             public RMSendWindow(
                 uint rateKbitsPerSec,
-                uint windowSizeInMilliSecs,
-                uint windowSizeInBytes
+                uint windowSizeInMilliSecs
             )
             {
                 RateKbitsPerSec = rateKbitsPerSec;
                 WindowSizeInMilliSecs = windowSizeInMilliSecs;
-                WindowSizeInBytes = windowSizeInBytes;
+                WindowSizeInBytes = (rateKbitsPerSec / 8) * windowSizeInMilliSecs;
             }
 
             public static implicit operator byte[](RMSendWindow sw)
