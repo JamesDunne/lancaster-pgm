@@ -21,9 +21,8 @@ namespace LANCaster
 
         static async Task Run()
         {
-            var config = new ProtocolConfiguration
+            var config = new ProtocolConfiguration(new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982))
             {
-                MulticastEndPoint = new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982),
                 UsePGM = true,
                 UseNonBlockingIO = true
             };

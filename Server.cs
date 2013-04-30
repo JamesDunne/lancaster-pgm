@@ -16,9 +16,10 @@ namespace LANCaster
         readonly ProtocolConfiguration config;
         readonly Socket s;
 
-        public Server(ProtocolConfiguration config = null)
+        public Server(ProtocolConfiguration config)
         {
-            this.config = config = config ?? new ProtocolConfiguration();
+            if (config == null) throw new ArgumentNullException("config");
+            this.config = config;
 
             // PGM or UDP:
             if (config.UsePGM)
@@ -38,13 +39,13 @@ namespace LANCaster
             if (config.UsePGM)
             {
                 // TODO: port number for non-PGM
-                s.Bind(new IPEndPoint(IPAddress.Any, 0));
+                s.Bind(new IPEndPoint(IPAddress.Any, config.MulticastEndpoint.Port));
 
                 // NOTE(jsd): This option fails here:
                 //s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_SEND_WINDOW_ADV_RATE, 50);
 
-                // 80 MB/s rated window size:
-                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_RATE_WINDOW_SIZE, new PGM.RMSendWindow(80 * 1024u * 8u, 500u));
+                // Set the window size parameters (very important for good bandwidth utilization):
+                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_RATE_WINDOW_SIZE, new PGM.RMSendWindow(config.SendRateKBitsPerSec, config.SendWindowSize));
             }
             else
             {
@@ -62,27 +63,27 @@ namespace LANCaster
                 if (config.UseNonBlockingIO)
                 {
                     await Task.Factory.FromAsync(
-                        (AsyncCallback cb, object state) => s.BeginConnect(config.MulticastEndPoint, cb, state),
+                        (AsyncCallback cb, object state) => s.BeginConnect(config.MulticastEndpoint, cb, state),
                         (IAsyncResult iar) => s.EndConnect(iar),
                         (object)null
                     );
                 }
                 else
                 {
-                    s.Connect(config.MulticastEndPoint);
+                    s.Connect(config.MulticastEndpoint);
                 }
             }
             else
             {
-                s.Bind(new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)config.MulticastEndPoint).Port));
+                s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
                 s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(((IPEndPoint)config.MulticastEndPoint).Address));
+                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(config.MulticastEndpoint.Address));
             }
 
             Debug.WriteLine("S: Connected");
         }
 
-        public async Task<Either<int, SocketError>> Send(params ArraySegment<byte>[] bufs)
+        public async Task<Either<int, SocketError>> Send(ArraySegment<byte> buf)
         {
             Debug.WriteLine("S: Sending...");
             SocketError err = SocketError.Success;
@@ -95,14 +96,14 @@ namespace LANCaster
                     if (config.UseNonBlockingIO)
                     {
                         snv = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => s.BeginSend(bufs, SocketFlags.None, cb, state),
+                            (AsyncCallback cb, object state) => s.BeginSend(buf.Array, buf.Offset, buf.Count, SocketFlags.None, cb, state),
                             (IAsyncResult iar) => s.EndSend(iar, out err),
                             (object)null
                         );
                     }
                     else
                     {
-                        snv = s.Send(bufs, SocketFlags.None, out err);
+                        snv = s.Send(buf.Array, buf.Offset, buf.Count, SocketFlags.None, out err);
                     }
                 }
                 else
@@ -110,14 +111,14 @@ namespace LANCaster
                     if (config.UseNonBlockingIO)
                     {
                         snv = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => s.BeginSendTo(bufs[0].Array, bufs[0].Offset, bufs[0].Count, SocketFlags.None, config.MulticastEndPoint, cb, state),
+                            (AsyncCallback cb, object state) => s.BeginSendTo(buf.Array, buf.Offset, buf.Count, SocketFlags.None, config.MulticastEndpoint, cb, state),
                             (IAsyncResult iar) => s.EndSendTo(iar),
                             (object)null
                         );
                     }
                     else
                     {
-                        snv = s.SendTo(bufs[0].Array, bufs[0].Offset, bufs[0].Count, SocketFlags.None, config.MulticastEndPoint);
+                        snv = s.SendTo(buf.Array, buf.Offset, buf.Count, SocketFlags.None, config.MulticastEndpoint);
                     }
                 }
 

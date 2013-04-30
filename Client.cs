@@ -17,7 +17,8 @@ namespace LANCaster
 
         public Client(ProtocolConfiguration config)
         {
-            this.config = config = config ?? new ProtocolConfiguration();
+            if (config == null) throw new ArgumentNullException("config");
+            this.config = config;
 
             if (config.UsePGM)
             {
@@ -40,7 +41,7 @@ namespace LANCaster
         {
             if (config.UsePGM)
             {
-                s.Bind(config.MulticastEndPoint);
+                s.Bind(config.MulticastEndpoint);
                 s.Listen(1);
 
                 Debug.WriteLine("C: Accepting...");
@@ -54,9 +55,9 @@ namespace LANCaster
             }
             else
             {
-                s.Bind(new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)config.MulticastEndPoint).Port));
+                s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
                 s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(((IPEndPoint)config.MulticastEndPoint).Address));
+                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(config.MulticastEndpoint.Address));
 
                 s.ReceiveTimeout = 5000;
                 return new Connection(s, cancel, config);
@@ -81,7 +82,7 @@ namespace LANCaster
                 return new ArraySegment<byte>(new byte[config.BufferSize]);
             }
 
-            public async Task<Either<ArraySegment<byte>, SocketError>> Receive(params ArraySegment<byte>[] bufs)
+            public async Task<Either<ArraySegment<byte>, SocketError>> Receive(ArraySegment<byte> buf)
             {
                 Debug.WriteLine("C: Receiving...");
 
@@ -100,14 +101,14 @@ namespace LANCaster
                     if (config.UseNonBlockingIO)
                     {
                         n = await Task.Factory.FromAsync(
-                            (AsyncCallback cb, object state) => ls.BeginReceive(bufs, SocketFlags.None, cb, state),
+                            (AsyncCallback cb, object state) => ls.BeginReceive(buf.Array, buf.Offset, buf.Count, SocketFlags.None, cb, state),
                             (IAsyncResult iar) => ls.EndReceive(iar, out err),
                             (object)null
                         );
                     }
                     else
                     {
-                        n = ls.Receive(bufs, SocketFlags.None, out err);
+                        n = ls.Receive(buf.Array, buf.Offset, buf.Count, SocketFlags.None, out err);
                     }
 
                     if (err != SocketError.Success || n == 0)
@@ -121,7 +122,7 @@ namespace LANCaster
                 Debug.WriteLine("C: Received {0} bytes".F(n));
                 Debug.Assert(n > 0);
 
-                return new ArraySegment<byte>(bufs[0].Array, bufs[0].Offset, n);
+                return new ArraySegment<byte>(buf.Array, buf.Offset, n);
             }
 
             public void Close()
