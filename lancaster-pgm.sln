@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LANCaster", "LANCaster\LANCaster.csproj", "{2B464775-A5FF-40DC-82C9-6299A4E8A2A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LANCasterServer", "LANCasterServer\LANCasterServer.csproj", "{95C19B0D-A686-474C-99D1-279B3E1A30AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LANCasterClient", "LANCasterClient\LANCasterClient.csproj", "{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +29,22 @@ Global
 		{2B464775-A5FF-40DC-82C9-6299A4E8A2A7}.Release|x64.Build.0 = Release|x64
 		{2B464775-A5FF-40DC-82C9-6299A4E8A2A7}.Release|x86.ActiveCfg = Release|x86
 		{2B464775-A5FF-40DC-82C9-6299A4E8A2A7}.Release|x86.Build.0 = Release|x86
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Release|x64.ActiveCfg = Release|Any CPU
+		{95C19B0D-A686-474C-99D1-279B3E1A30AD}.Release|x86.ActiveCfg = Release|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Release|x64.ActiveCfg = Release|Any CPU
+		{AADCFCF4-1BE2-4D98-A982-E3E4A7729DA2}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
