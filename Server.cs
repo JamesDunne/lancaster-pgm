@@ -34,23 +34,32 @@ namespace LANCaster
             if (config.UseNonBlockingIO)
                 s.UseOnlyOverlappedIO = true;
 
-            s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            if (config.UseLoopback)
+                s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+            // Calculate send window buffer size:
+            var sendWindow = new PGM.RMSendWindow(config.SendRateKBitsPerSec, config.SendWindowSize);
 
             if (config.UsePGM)
             {
-                // TODO: port number for non-PGM
+                // PGM:
                 s.Bind(new IPEndPoint(IPAddress.Any, config.MulticastEndpoint.Port));
 
                 // NOTE(jsd): This option fails here:
                 //s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_SEND_WINDOW_ADV_RATE, 50);
 
                 // Set the window size parameters (very important for good bandwidth utilization):
-                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_RATE_WINDOW_SIZE, new PGM.RMSendWindow(config.SendRateKBitsPerSec, config.SendWindowSize));
+                s.SetSocketOption(PGM.IPPROTO_RM, PGM.RM_RATE_WINDOW_SIZE, sendWindow);
             }
             else
             {
-                s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, 64 * 1024 * 1024);
-                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
+                // Multicast UDP:
+                s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, (int)sendWindow.WindowSizeInBytes);
+
+                if (config.UseLoopback)
+                {
+                    s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
+                }
             }
         }
 
@@ -75,8 +84,15 @@ namespace LANCaster
             }
             else
             {
-                s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
-                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                if (config.UseLoopback)
+                {
+                    s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
+                    s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                }
+                else
+                {
+                    s.Bind(config.MulticastEndpoint);
+                }
                 s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(config.MulticastEndpoint.Address));
             }
 

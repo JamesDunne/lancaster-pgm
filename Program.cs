@@ -21,10 +21,12 @@ namespace LANCaster
 
         static async Task Run()
         {
+            // Setup protocol configuration:
             var config = new ProtocolConfiguration(new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982))
             {
-                UsePGM = true,
-                UseNonBlockingIO = true
+                UsePGM = false,
+                UseLoopback = true,
+                UseNonBlockingIO = false
             };
 
             // Make sure that PGM is installed if required:
@@ -36,6 +38,7 @@ namespace LANCaster
                 return;
             }
 
+            // Wait for keypress to start:
             while (Console.KeyAvailable) Console.ReadKey(true);
             Console.WriteLine("Press any key to start...");
             Console.ReadKey(true);
@@ -131,8 +134,7 @@ namespace LANCaster
                                 break;
                             }
 
-                            ++recvd;
-                            if ((recvd & 511) == 1)
+                            if ((recvd++ & 511) == 0)
                             {
                                 // , Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count)
                                 Console.WriteLine("C: {0}", recvd);

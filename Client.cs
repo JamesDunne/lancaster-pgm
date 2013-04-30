@@ -29,7 +29,10 @@ namespace LANCaster
                 this.s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             }
 
-            this.s.ReceiveBufferSize = config.BufferSize * 2048;
+            // Calculate send window buffer size:
+            var sendWindow = new PGM.RMSendWindow(config.SendRateKBitsPerSec, config.SendWindowSize);
+
+            this.s.ReceiveBufferSize = (int)sendWindow.WindowSizeInBytes;
 
             this.s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
@@ -55,8 +58,15 @@ namespace LANCaster
             }
             else
             {
-                s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
-                s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                if (config.UseLoopback)
+                {
+                    s.Bind(new IPEndPoint(IPAddress.Loopback, config.MulticastEndpoint.Port));
+                    s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                }
+                else
+                {
+                    s.Bind(config.MulticastEndpoint);
+                }
                 s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(config.MulticastEndpoint.Address));
 
                 s.ReceiveTimeout = 5000;

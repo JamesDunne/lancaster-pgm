@@ -23,12 +23,13 @@ namespace LANCaster
 
         public int BufferSize = 9040;
         public bool UsePGM = true;
+        public bool UseLoopback = false;
         public bool UseNonBlockingIO = true;
 
         /// <summary>
-        /// Default 80 MB/s send rate (= 80u * 1024u * 8u).
+        /// Default 100 MB/s send rate (= 100u * 1024u * 8u).
         /// </summary>
-        public uint SendRateKBitsPerSec = 80u * 1024u * 8u;
+        public uint SendRateKBitsPerSec = 100u * 1024u * 8u;
         public TimeSpan SendWindowSize = TimeSpan.FromMilliseconds(250);
     }
 }
