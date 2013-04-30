@@ -24,9 +24,10 @@ namespace LANCaster
             // Setup protocol configuration:
             var config = new ProtocolConfiguration(new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982))
             {
-                UsePGM = false,
+                UsePGM = true,
                 UseLoopback = true,
-                UseNonBlockingIO = false
+                // Blocking I/O is much faster
+                UseNonBlockingIO = true
             };
 
             // Make sure that PGM is installed if required:
@@ -67,9 +68,9 @@ namespace LANCaster
 
                             Console.WriteLine("S: Sending...");
                             // Send some data so the client can accept:
+#if false
                             for (int i = 0; i < 30000; ++i)
                             {
-#if true
                                 var task0 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
                                 var task1 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
                                 var task2 = server.Send(new ArraySegment<byte>(buffer, 0, sn));
@@ -89,10 +90,17 @@ namespace LANCaster
                                 {
                                     Console.Error.WriteLine("S: {0}", res2.Right);
                                 }
-#else
-                                var task = server.Send(new ArraySegment<byte>(buffer, 0, sn));
-#endif
                             }
+#else
+                            for (int i = 0; i < 90000; ++i)
+                            {
+                                var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
+                                if (res.IsRight)
+                                {
+                                    Console.Error.WriteLine("S: {0}", res.Right);
+                                }
+                            }
+#endif
                         }
 
                         Console.WriteLine("S: Done");

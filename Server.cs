@@ -111,11 +111,18 @@ namespace LANCaster
                 {
                     if (config.UseNonBlockingIO)
                     {
+#if true
+                        var res = await s.SendAsTask(buf, SocketFlags.None);
+                        if (res.IsRight) return res.Right;
+
+                        snv = res.Left;
+#else
                         snv = await Task.Factory.FromAsync(
                             (AsyncCallback cb, object state) => s.BeginSend(buf.Array, buf.Offset, buf.Count, SocketFlags.None, cb, state),
                             (IAsyncResult iar) => s.EndSend(iar, out err),
                             (object)null
                         );
+#endif
                     }
                     else
                     {
@@ -126,11 +133,18 @@ namespace LANCaster
                 {
                     if (config.UseNonBlockingIO)
                     {
+#if true
+                        var res = await s.SendToAsTask(buf, SocketFlags.None, config.MulticastEndpoint);
+                        if (res.IsRight) return res.Right;
+
+                        snv = res.Left;
+#else
                         snv = await Task.Factory.FromAsync(
                             (AsyncCallback cb, object state) => s.BeginSendTo(buf.Array, buf.Offset, buf.Count, SocketFlags.None, config.MulticastEndpoint, cb, state),
                             (IAsyncResult iar) => s.EndSendTo(iar),
                             (object)null
                         );
+#endif
                     }
                     else
                     {

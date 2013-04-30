@@ -110,11 +110,18 @@ namespace LANCaster
                     // NOTE(jsd): Logic is equivalent regardless of PGM or UDP protocol:
                     if (config.UseNonBlockingIO)
                     {
+#if true
+                        var res = await ls.ReceiveAsTask(buf, SocketFlags.None);
+                        if (res.IsRight) return res.Right;
+
+                        n = res.Left;
+#else
                         n = await Task.Factory.FromAsync(
                             (AsyncCallback cb, object state) => ls.BeginReceive(buf.Array, buf.Offset, buf.Count, SocketFlags.None, cb, state),
                             (IAsyncResult iar) => ls.EndReceive(iar, out err),
                             (object)null
                         );
+#endif
                     }
                     else
                     {
