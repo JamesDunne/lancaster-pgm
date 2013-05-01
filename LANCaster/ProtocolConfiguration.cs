@@ -31,5 +31,12 @@ namespace LANCaster
         /// </summary>
         public uint SendRateKBitsPerSec = 100u * 1024u * 8u;
         public TimeSpan SendWindowSize = TimeSpan.FromMilliseconds(250);
+
+        public static readonly ProtocolConfiguration Default = new ProtocolConfiguration(new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982))
+        {
+            UsePGM = true,
+            UseLoopback = false,
+            UseNonBlockingIO = true
+        };
     }
 }

@@ -20,14 +20,7 @@ namespace LANCasterClient
 
         static async Task Run()
         {
-            // Setup protocol configuration:
-            var config = new ProtocolConfiguration(new IPEndPoint(IPAddress.Parse("224.12.19.82"), 1982))
-            {
-                UsePGM = false,
-                UseLoopback = true,
-                // Blocking I/O is much faster
-                UseNonBlockingIO = true
-            };
+            var config = ProtocolConfiguration.Default;
 
             // Make sure that PGM is installed if required:
             if (config.UsePGM && !PGM.Detect())
