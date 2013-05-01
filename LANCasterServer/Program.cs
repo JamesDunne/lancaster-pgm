@@ -33,7 +33,7 @@ namespace LANCasterServer
 
             // Wait for keypress to start:
             while (Console.KeyAvailable) Console.ReadKey(true);
-            Console.WriteLine("Press any key to start...");
+            Console.WriteLine("Press any key to start server...");
             Console.ReadKey(true);
 
             try
@@ -45,19 +45,16 @@ namespace LANCasterServer
 
                 const int bufferSize = 9040;
                 byte[] buffer = new byte[bufferSize];
-                int sn = Encoding.ASCII.GetBytes("HELLO", 0, 5, buffer, 0);
-                sn = bufferSize;
 
+                int k = 0;
                 for (int j = 0; j < 10; ++j)
                 {
-                    Console.WriteLine("Wait 3000 ms...");
-                    await Task.Delay(3000);
-
                     Console.WriteLine("Sending...");
-                    // Send some data so the client can accept:
-                    for (int i = 0; i < 90000; ++i)
+                    for (int i = 0; i < 100000; ++i, ++k)
                     {
-                        var res = await server.Send(new ArraySegment<byte>(buffer, 0, sn));
+                        Array.Copy(BitConverter.GetBytes(k), 0, buffer, 0, 4);
+
+                        var res = await server.Send(new ArraySegment<byte>(buffer, 0, bufferSize));
                         if (res.IsRight)
                         {
                             Console.Error.WriteLine("{0}", res.Right);

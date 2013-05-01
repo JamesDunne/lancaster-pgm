@@ -31,17 +31,19 @@ namespace LANCasterClient
                 return;
             }
 
+#if false
             // Wait for keypress to start:
             while (Console.KeyAvailable) Console.ReadKey(true);
             Console.WriteLine("Press any key to start...");
             Console.ReadKey(true);
+#endif
 
             try
             {
                 var client = new Client(config);
 
                 // Client listen needs some data sent to accept:
-                Console.WriteLine("Accept...");
+                Console.WriteLine("Accepting...");
                 var res = await client.Accept(CancellationToken.None);
                 if (res.IsRight)
                 {
@@ -51,7 +53,6 @@ namespace LANCasterClient
                 var conn = res.Left;
                 Console.WriteLine("Accepted");
 
-                int recvd = 0;
                 var buf = conn.AllocateBuffer();
                 while (true)
                 {
@@ -69,14 +70,14 @@ namespace LANCasterClient
                         break;
                     }
 
-                    if ((recvd++ & 511) == 0)
+                    var rbuf = rres.Left;
+                    int k = BitConverter.ToInt32(rbuf.Array, rbuf.Offset);
+                    if ((k & 511) == 0)
                     {
                         // , Encoding.ASCII.GetString(res.Left.Array, res.Left.Offset, res.Left.Count)
-                        Console.WriteLine("{0}", recvd);
+                        Console.WriteLine("{0,7}", k);
                     }
                 }
-
-                Console.WriteLine("{0}", recvd);
 
                 while (Console.KeyAvailable) Console.ReadKey(true);
                 Console.WriteLine("Finished! Press any key to exit.");
