@@ -30,8 +30,7 @@ namespace LANCaster
             if (config.UseNonBlockingIO)
                 s.UseOnlyOverlappedIO = true;
 
-            if (config.UseLoopback)
-                s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
             // Calculate send window buffer size:
             var sendWindow = new PGM.RMSendWindow(config.SendRateKBitsPerSec, config.SendWindowSize);

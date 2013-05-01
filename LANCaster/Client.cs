@@ -26,12 +26,12 @@ namespace LANCaster
                 this.s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             }
 
+            this.s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
             // Calculate send window buffer size:
             var sendWindow = new PGM.RMSendWindow(config.SendRateKBitsPerSec, config.SendWindowSize);
 
             this.s.ReceiveBufferSize = (int)sendWindow.WindowSizeInBytes;
-
-            this.s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
             if (config.UseNonBlockingIO)
                 this.s.UseOnlyOverlappedIO = true;

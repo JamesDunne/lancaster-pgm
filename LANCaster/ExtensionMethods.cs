@@ -30,7 +30,7 @@ namespace System.Net.Sockets
                 {
                     try
                     {
-                        int n = s.EndSendTo(iar);
+                        s.EndConnect(iar);
                         tcs.SetResult(Maybe<SocketError>.Nothing);
                     }
                     catch (SocketException skex)
